@@ -314,7 +314,7 @@ static int met_pmu_cpu_notify(struct notifier_block *self, unsigned long action,
 	}
 #endif
 
-	if (cpu < 0 || cpu >= ARRAY_SIZE(preferred_cpu_list))
+	if (cpu < 0 || cpu >= NR_CPUS)
 		return NOTIFY_OK;
 
 	switch (action) {
