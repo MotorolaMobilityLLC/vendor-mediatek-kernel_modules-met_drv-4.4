@@ -1,4 +1,3 @@
-ifeq (met.ko,$(patsubst %_intermediates,%,$(notdir $(M))))
 $(info ======== Build met_drv ... ========)
 MET_CORE := $(MTK_PLATFORM)/core
 
@@ -33,5 +32,3 @@ met-y += $(MET_CORE)/met_tag_ex.o
 CFLAGS_met_tag_ex.o += -DMET_USER_EVENT_SUPPORT
 
 met-$(CONFIG_CPU_FREQ) += $(MET_CORE)/power.o
-
-endif # met.ko
