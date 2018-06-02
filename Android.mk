@@ -1,5 +1,6 @@
 LOCAL_PATH := $(call my-dir)
-ifneq (,$(findstring /$(patsubst kernel-%,%,$(LINUX_KERNEL_VERSION)),$(LOCAL_PATH)))
+
+ifneq (,$(filter $(word 2,$(subst -, ,$(LINUX_KERNEL_VERSION))),$(subst /, ,$(LOCAL_PATH))))
 
 MY_KERNEL_ROOT_DIR := $(PWD)
 MY_KERNEL_CONFIG_FILE := $(MY_KERNEL_ROOT_DIR)/kernel-4.4/arch/$(TARGET_ARCH)/configs/$(KERNEL_DEFCONFIG)
