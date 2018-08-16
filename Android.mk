@@ -3,7 +3,7 @@ LOCAL_PATH := $(call my-dir)
 ifneq (,$(filter $(word 2,$(subst -, ,$(LINUX_KERNEL_VERSION))),$(subst /, ,$(LOCAL_PATH))))
 
 MY_KERNEL_ROOT_DIR := $(PWD)
-MY_KERNEL_CONFIG_FILE := $(MY_KERNEL_ROOT_DIR)/kernel-4.4/arch/$(TARGET_ARCH)/configs/$(KERNEL_DEFCONFIG)
+MY_KERNEL_CONFIG_FILE := $(MY_KERNEL_ROOT_DIR)/kernel-4.4/arch/$(KERNEL_TARGET_ARCH)/configs/$(KERNEL_DEFCONFIG)
 MY_KERNEL_CONFIG_MODULES := $(shell grep ^CONFIG_MODULES=y $(MY_KERNEL_CONFIG_FILE))
 
 MY_KERNEL_DEFAULT_CONFIG_FILE := $(MY_KERNEL_ROOT_DIR)/kernel-4.4/drivers/misc/mediatek/Kconfig.default
