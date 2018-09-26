@@ -29,7 +29,7 @@
 /* #include "plf_trace.h" */
 #include "mtk_emi_bm.h"
 
-#ifdef CONFIG_MTK_TINYSYS_SSPM_SUPPORT
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(ONDIEMET_SUPPORT)
 #include "sspm/ondiemet_sspm.h"
 #endif
 
@@ -452,9 +452,9 @@ static void emi_init(void)
 			msel_group_val[3] = msel_group3;
 		} else {
 			msel_group_val[0] = _ALL;
-			msel_group_val[1] = _GP_1_Default;
-			msel_group_val[2] = _GP_2_Default;
-			msel_group_val[3] = _GP_3_Default;
+			msel_group_val[1] = _ALL;
+			msel_group_val[2] = _ALL;
+			msel_group_val[3] = _ALL;
 		}
 
 		MET_BM_SetLatencyCounter(1);
@@ -631,11 +631,11 @@ static void met_emi_resume(void)
 }
 
 
-#ifdef CONFIG_MTK_TINYSYS_SSPM_SUPPORT
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(ONDIEMET_SUPPORT)
 static const char help[] = "  --emi                                 monitor EMI banwidth\n";
 
 #define TTYPE_NAME_STR_LEN  64
-static char ttype_name[21][TTYPE_NAME_STR_LEN];
+/* static char ttype_name[21][TTYPE_NAME_STR_LEN]; */
 
 static int emi_print_help(char *buf, int len)
 {
@@ -645,10 +645,10 @@ static int emi_print_help(char *buf, int len)
 static int emi_print_header(char *buf, int len)
 {
 	int ret = 0;
-	int ret_m[21];
+/*	int ret_m[21]; */
 	int i = 0;
 
-
+#if 0
 	for (i = 0; i < 21; i++) {
 		int k;
 
@@ -657,16 +657,16 @@ static int emi_print_header(char *buf, int len)
 
 			for (j = 0; j < ARRAY_SIZE(ttype_master_list_item); j++) {
 				if (ttype_master_val[i] == ttype_master_list_item[j].key) {
-					ret_m[i] = snprintf(ttype_name[i], TTYPE_NAME_STR_LEN, "ttyp%d_%s",
+					ret_m[i] = snprintf(ttype_name[i], TTYPE_NAME_STR_LEN, "ttype%d_%s",
 							    i + 1, ttype_master_list_item[j].val);
 					break;
 				}
 			}
 			if (j == ARRAY_SIZE(ttype_master_list_item))
-				ret_m[i] = snprintf(ttype_name[i], TTYPE_NAME_STR_LEN, "ttyp%d_%s",
+				ret_m[i] = snprintf(ttype_name[i], TTYPE_NAME_STR_LEN, "ttype%d_%s",
 						    i + 1, "unknown");
 		} else {
-			ret_m[i] = snprintf(ttype_name[i], TTYPE_NAME_STR_LEN, "ttyp%d_%x",
+			ret_m[i] = snprintf(ttype_name[i], TTYPE_NAME_STR_LEN, "ttype%d_%x",
 					    i + 1, ttype_busid_val[i]);
 		}
 
@@ -694,6 +694,8 @@ static int emi_print_header(char *buf, int len)
 						     ttype_rw_list_item[k].val);
 		}
 	}
+#endif
+
 	if ((ttype1_16_en != BM_TTYPE1_16_ENABLE) && (emi_TP_busfiltr_enable != 1)) {
 		if (msel_enable) {
 			ret += snprintf(buf + ret, PAGE_SIZE - ret,
@@ -704,9 +706,9 @@ static int emi_print_header(char *buf, int len)
 		} else {
 			ret += snprintf(buf + ret, PAGE_SIZE - ret,
 				"met-info [000] 0.0: met_emi_msel: %x,%x,%x\n",
-				_GP_1_Default & _ALL,
-				_GP_2_Default & _ALL,
-				_GP_3_Default & _ALL);
+				_ALL & _ALL,
+				_ALL & _ALL,
+				_ALL & _ALL);
 		}
 	} else {
 		ret += snprintf(buf + ret, PAGE_SIZE - ret,
@@ -738,6 +740,7 @@ static int emi_print_header(char *buf, int len)
 
 	ret += snprintf(buf + ret, PAGE_SIZE - ret,
 			"met-info [000] 0.0: met_emi_ultra_filter: %x\n", high_priority_filter);
+#if 0
 	if ((ttype1_16_en == BM_TTYPE1_16_ENABLE) && (ttype17_21_en == BM_TTYPE17_21_ENABLE)) {
 		int i;
 
@@ -757,6 +760,68 @@ static int emi_print_header(char *buf, int len)
 
 		ret += snprintf(buf + ret, PAGE_SIZE - ret, "x,x,x,x,x\n");
 	}
+#else
+	/* ttype header */
+	if (ttype17_21_en == BM_TTYPE17_21_ENABLE) {
+		int i = 0;
+		int j = 0;
+
+		/* ttype master list */
+		ret += snprintf(buf + ret, PAGE_SIZE - ret, "met-info [000] 0.0: met_emi_ttype_master_list: ");
+		for (i = 0; i < 21; i++) {
+			for (j = 0; j < ARRAY_SIZE(ttype_master_list_item); j++) {
+				if (ttype_master_val[i] == ttype_master_list_item[j].key) {
+					ret += snprintf(buf + ret, PAGE_SIZE - ret, "%s,", ttype_master_list_item[j].val);
+				}
+			}
+		}
+		/* remove the last comma */
+		snprintf(buf + ret -1, PAGE_SIZE - ret + 1, "\n");
+
+		/* ttype busid list */
+		ret += snprintf(buf + ret, PAGE_SIZE - ret, "met-info [000] 0.0: met_emi_ttype_busid_list: ");
+		for (i = 0; i < 21; i++)
+			ret += snprintf(buf + ret, PAGE_SIZE - ret, "%x,", ttype_busid_val[i]);
+
+		snprintf(buf + ret -1, PAGE_SIZE - ret + 1, "\n");
+
+		/* ttype nbeat list */
+		ret += snprintf(buf + ret, PAGE_SIZE - ret, "met-info [000] 0.0: met_emi_ttype_nbeat_list: ");
+		for (i = 0; i < 21; i++) {
+			for (j = 0; j < ARRAY_SIZE(ttype_nbeat_list_item); j++) {
+				if (ttype_nbeat_val[i] == ttype_nbeat_list_item[j].key) {
+					ret += snprintf(buf + ret, PAGE_SIZE - ret, "%d,", ttype_nbeat_list_item[j].val);
+				}
+			}
+		}
+		snprintf(buf + ret -1, PAGE_SIZE - ret + 1, "\n");
+
+		/* ttype nbyte list */
+		ret += snprintf(buf + ret, PAGE_SIZE - ret, "met-info [000] 0.0: met_emi_ttype_nbyte_list: ");
+		for (i = 0; i < 21; i++) {
+			for (j = 0; j < ARRAY_SIZE(ttype_nbyte_list_item); j++) {
+				if (ttype_nbyte_val[i] == ttype_nbyte_list_item[j].key) {
+					ret += snprintf(buf + ret, PAGE_SIZE - ret, "%d,", ttype_nbyte_list_item[j].val);
+				}
+			}
+		}
+		snprintf(buf + ret -1, PAGE_SIZE - ret + 1, "\n");
+
+		/* ttype burst list */
+		ret += snprintf(buf + ret, PAGE_SIZE - ret, "met-info [000] 0.0: met_emi_ttype_burst_list: ");
+		for (i = 0; i < 21; i++) {
+			for (j = 0; j < ARRAY_SIZE(ttype_burst_list_item); j++) {
+				if (ttype_burst_val[i] == ttype_burst_list_item[j].key) {
+					ret += snprintf(buf + ret, PAGE_SIZE - ret, "%s,", ttype_burst_list_item[j].val);
+				}
+			}
+		}
+		snprintf(buf + ret -1, PAGE_SIZE - ret + 1, "\n");
+
+		/* ttype enable */
+		ret += snprintf(buf + ret, PAGE_SIZE - ret, "met-info [000] 0.0: met_emi_ttype_enable: %d,%d\n",ttype1_16_en, ttype17_21_en);
+	}
+#endif
 
 	return ret;
 }
@@ -764,6 +829,21 @@ static int emi_print_header(char *buf, int len)
 static int ondiemet_emi_print_header(char *buf, int len)
 {
 	return emi_print_header(buf, len);
+}
+
+static void MET_BM_IPI_REGISTER_CB(void)
+{
+	int ret, i;
+	unsigned int rdata;
+	unsigned int ipi_buf[4];
+
+	for (i = 0; i < 4; i++)
+		ipi_buf[i] = 0;
+
+	if (sspm_buf_available == 1) {
+		ipi_buf[0] = MET_MAIN_ID | (MID_EMI << MID_BIT_SHIFT) | MET_ARGU | SET_REGISTER_CB;
+		ret = sspm_ipi_send_sync(IPI_ID_MET, IPI_OPT_WAIT, (void *)ipi_buf, 0, &rdata, 1);
+	}
 }
 
 static void MET_BM_IPI_configs(void)
@@ -783,6 +863,7 @@ static void MET_BM_IPI_configs(void)
 
 static void ondiemet_emi_start(void)
 {
+	MET_BM_IPI_REGISTER_CB();
 	if (!emi_inited) {
 		if (MET_BM_Init() != 0) {
 			met_sspm_emi.mode = 0;
@@ -822,7 +903,7 @@ struct metdevice met_sspm_emi = {
 	.create_subfs		= met_emi_create,
 	.delete_subfs		= met_emi_delete,
 	.resume			= met_emi_resume,
-#ifdef CONFIG_MTK_TINYSYS_SSPM_SUPPORT
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(ONDIEMET_SUPPORT)
 	.ondiemet_start		= ondiemet_emi_start,
 	.ondiemet_stop		= ondiemet_emi_stop,
 	.ondiemet_print_help	= emi_print_help,
