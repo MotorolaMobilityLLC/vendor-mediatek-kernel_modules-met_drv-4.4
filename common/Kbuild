@@ -189,11 +189,23 @@ endif
 
 met-$(MET_PTPOD) += $(MET_CORE)/met_ptpod.o
 
+################################################################################
+# MET_WALLTIME
+################################################################################
+$(info FEATURE_WALLTIME = $(FEATURE_WALLTIME))
+ifeq ($(FEATURE_WALLTIME), on)
+    MET_WALLTIME := y
+else
+    MET_WALLTIME := n
+endif
+
+met-$(MET_WALLTIME) += $(MET_CORE)/met_wall_time.o
 
 ################################################################################
 # On-die-met SSPM only module
 ################################################################################
 $(info FEATURE_ONDIEMET = $(FEATURE_ONDIEMET))
+$(info FEATURE_ONDIEMET_WALLTIME = $(FEATURE_ONDIEMET_WALLTIME))
 ifeq ($(FEATURE_ONDIEMET), on)
     subdir-ccflags-y += -DONDIEMET_SUPPORT
 
@@ -208,6 +220,33 @@ ifeq ($(FEATURE_ONDIEMET), on)
         subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/sspm
         subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/sspm/$(MTK_PLATFORM)
         met-y += $(MET_CORE)/sspm/sspm_ipi_handle.o
+
+        ifneq ("$(wildcard $(srctree)/drivers/misc/mediatek/sspm/$(MTK_PLATFORM)/sspm_ipi_define.h)","")
+            subdir-ccflags-y += -I$(srctree)/drivers/misc/mediatek/sspm \
+                    -I$(srctree)/drivers/misc/mediatek/sspm/$(MTK_PLATFORM)
+
+            SYS_SSPM_READY := y
+        else
+            $(info ======== Missing $(srctree)/drivers/misc/mediatek/sspm/$(MTK_PLATFORM)/sspm_ipi_define.h========)
+            $(info ======== disable ALL ondiemet feature ========)
+
+            SYS_SSPM_READY := n
+        endif
+    else
+        $(info ======== CONFIG_MTK_TINYSYS_SSPM_SUPPORT = n ========)
+        $(info ======== disable ALL ondiemet feature ========)
+
+        SYS_SSPM_READY := n
+    endif
+
+    ifeq ($(SYS_SSPM_READY), y)
+        ifeq ($(FEATURE_ONDIEMET_WALLTIME), on)
+            MET_SSPM_WALLTIME := y
+        else
+            MET_SSPM_WALLTIME := n
+        endif
+
+        met-$(MET_SSPM_WALLTIME) += $(MET_CORE)/sspm/sspm_walltime.o
     endif
 endif
 

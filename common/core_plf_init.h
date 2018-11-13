@@ -139,4 +139,14 @@ extern unsigned int (*mt_cpufreq_get_cur_volt_symbol)(unsigned int cluster_id);
 extern struct metdevice met_ptpod;
 #endif /* MET_PTPOD */
 
+#ifdef MET_WALLTIME
+extern struct metdevice met_wall_time;
+#endif
+
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(ONDIEMET_SUPPORT)
+#ifdef MET_SSPM_WALLTIME
+extern struct metdevice met_sspm_walltime;
+#endif
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT */
+
 #endif /*__CORE_PLF_INIT_H__*/
