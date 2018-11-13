@@ -9,12 +9,7 @@
 ################################################################################
 # Feature On/Off
 ################################################################################
-FEATURE_SSPM_EMI := off
-FEATURE_GPU := on
-FEATURE_VCOREDVFS := on
-FEATURE_PTPOD := on
-FEATURE_WALLTIME := on
+FEATURE_SSPM_EMI := n
 
 # ONDIEMET
-FEATURE_ONDIEMET := off
-    FEATURE_ONDIEMET_WALLTIME := off
+FEATURE_ONDIEMET := n

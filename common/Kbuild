@@ -2,7 +2,7 @@ $(info ======== Build met.ko ... ========)
 MET_CORE := common
 obj-m := met.o
 
-ifneq ($(wildcard $(MET_PLF_DIR)/Kbuild.platform.include)),)
+ifneq ($(wildcard $(MET_PLF_DIR)/Kbuild.platform.include),)
     include $(MET_PLF_DIR)/Kbuild.platform.include
 else
     $(info ======= Missing $(MET_PLF_DIR)/Kbuild.platform.include ========)
@@ -42,22 +42,22 @@ CFLAGS_met_tag_ex.o += -DMET_USER_EVENT_SUPPORT
 
 $(info ARCH = $(ARCH))
 ifeq ($(ARCH), mips)
-met-y += $(MET_CORE)/mips_pmu_hw.o
+    met-y += $(MET_CORE)/mips_pmu_hw.o
 endif #ifeq ($(ARCH), mips)
 
 ifeq ($(ARCH), arm)
-ccflags-y += -DCONFIG_MET_ARM_32BIT
-met-y += $(MET_CORE)/cpu_pmu.o
-met-y += $(MET_CORE)/v7_pmu_hw.o
-met-y += $(MET_CORE)/v6_pmu_hw.o
+    ccflags-y += -DCONFIG_MET_ARM_32BIT
+    met-y += $(MET_CORE)/cpu_pmu.o
+    met-y += $(MET_CORE)/v7_pmu_hw.o
+    met-y += $(MET_CORE)/v6_pmu_hw.o
 endif #ifeq ($(ARCH), arm)
 
 ifeq ($(ARCH), arm64)
-ccflags-y += -DMET_SUPPORT_CPUPMU_V2
-met-y += $(MET_CORE)/cpu_pmu.o
-met-y += $(MET_CORE)/v8_pmu_hw.o
-met-y += $(MET_CORE)/cpu_pmu_v2.o
-met-y += $(MET_CORE)/v8_pmu_hw_v2.o
+    ccflags-y += -DMET_SUPPORT_CPUPMU_V2
+    met-y += $(MET_CORE)/cpu_pmu.o
+    met-y += $(MET_CORE)/v8_pmu_hw.o
+    met-y += $(MET_CORE)/cpu_pmu_v2.o
+    met-y += $(MET_CORE)/v8_pmu_hw_v2.o
 endif
 
 $(info CONFIG_CPU_FREQ = $(CONFIG_CPU_FREQ))
@@ -69,12 +69,10 @@ endif
 ################################################################################
 # MET_EMI
 ################################################################################
+FEATURE_SSPM_EMI := $(if $(FEATURE_SSPM_EMI),$(FEATURE_SSPM_EMI),y)
 $(info FEATURE_SSPM_EMI = $(FEATURE_SSPM_EMI))
-ifeq ($(FEATURE_SSPM_EMI), on)
-    MET_EMI := y
-else
-    MET_EMI := n
-endif
+
+MET_EMI := $(if $(filter n,$(FEATURE_SSPM_EMI)),n,y)
 
 met-$(MET_EMI) += $(MET_CORE)/met_emi.o \
         $(MET_CORE)/mtk_emi_bm.o
@@ -83,8 +81,10 @@ met-$(MET_EMI) += $(MET_CORE)/met_emi.o \
 ################################################################################
 # MET_GPU
 ################################################################################
+FEATURE_GPU := $(if $(FEATURE_GPU),$(FEATURE_GPU),y)
 $(info FEATURE_GPU = $(FEATURE_GPU))
-ifeq ($(FEATURE_GPU), on)
+
+ifneq ($(FEATURE_GPU), n)
     MET_GPU := y
 
     # for mtk_gpufreq.h
@@ -120,8 +120,10 @@ met-$(MET_GPU) += $(MET_CORE)/mtk_gpu_metmonitor.o
 ################################################################################
 # MET_VCOREDVFS
 ################################################################################
+FEATURE_VCOREDVFS := $(if $(FEATURE_VCOREDVFS),$(FEATURE_VCOREDVFS),y)
 $(info FEATURE_VCOREDVFS = $(FEATURE_VCOREDVFS))
-ifeq ($(FEATURE_VCOREDVFS), on)
+
+ifneq ($(FEATURE_VCOREDVFS), n)
     MET_VCOREDVFS := y
 
     # for mtk_vcorefs_manager.h
@@ -151,8 +153,10 @@ met-$(MET_VCOREDVFS) += $(MET_CORE)/met_vcoredvfs.o
 ################################################################################
 # MET_PTPOD
 ################################################################################
+FEATURE_PTPOD := $(if $(FEATURE_PTPOD),$(FEATURE_PTPOD),y)
 $(info FEATURE_PTPOD = $(FEATURE_PTPOD))
-ifeq ($(FEATURE_PTPOD), on)
+
+ifneq ($(FEATURE_PTPOD), n)
     MET_PTPOD := y
 
     # for mtk_gpufreq.h
@@ -192,21 +196,27 @@ met-$(MET_PTPOD) += $(MET_CORE)/met_ptpod.o
 ################################################################################
 # MET_WALLTIME
 ################################################################################
+FEATURE_WALLTIME := $(if $(FEATURE_WALLTIME),$(FEATURE_WALLTIME),y)
 $(info FEATURE_WALLTIME = $(FEATURE_WALLTIME))
-ifeq ($(FEATURE_WALLTIME), on)
-    MET_WALLTIME := y
-else
-    MET_WALLTIME := n
-endif
+
+MET_WALLTIME := $(if $(filter n,$(FEATURE_WALLTIME)),n,y)
 
 met-$(MET_WALLTIME) += $(MET_CORE)/met_wall_time.o
 
 ################################################################################
 # On-die-met SSPM only module
 ################################################################################
+FEATURE_ONDIEMET := $(if $(FEATURE_ONDIEMET),$(FEATURE_ONDIEMET),y)
+ifeq ($(FEATURE_ONDIEMET), y)
+    FEATURE_ONDIEMET_WALLTIME := $(if $(FEATURE_ONDIEMET_WALLTIME),$(FEATURE_ONDIEMET_WALLTIME),y)
+else
+    FEATURE_ONDIEMET_WALLTIME := n
+endif
+
 $(info FEATURE_ONDIEMET = $(FEATURE_ONDIEMET))
 $(info FEATURE_ONDIEMET_WALLTIME = $(FEATURE_ONDIEMET_WALLTIME))
-ifeq ($(FEATURE_ONDIEMET), on)
+
+ifneq ($(FEATURE_ONDIEMET), n)
     subdir-ccflags-y += -DONDIEMET_SUPPORT
 
     ifeq ($(CONFIG_MTK_TINYSYS_SSPM_SUPPORT),)
@@ -240,11 +250,7 @@ ifeq ($(FEATURE_ONDIEMET), on)
     endif
 
     ifeq ($(SYS_SSPM_READY), y)
-        ifeq ($(FEATURE_ONDIEMET_WALLTIME), on)
-            MET_SSPM_WALLTIME := y
-        else
-            MET_SSPM_WALLTIME := n
-        endif
+        MET_SSPM_WALLTIME := $(if $(filter n,$(FEATURE_ONDIEMET_WALLTIME)),n,y)
 
         met-$(MET_SSPM_WALLTIME) += $(MET_CORE)/sspm/sspm_walltime.o
     endif
@@ -253,7 +259,7 @@ endif
 ##############################################################################################
 # include $(MET_PLF_DIR)/Kbuild
 ##############################################################################################
-ifneq ($(wildcard $(MET_PLF_DIR)/Kbuild)),)
+ifneq ($(wildcard $(MET_PLF_DIR)/Kbuild),)
     include $(MET_PLF_DIR)/Kbuild
 else
     $(info ======= Missing $(MET_PLF_DIR)/Kbuild ========)
