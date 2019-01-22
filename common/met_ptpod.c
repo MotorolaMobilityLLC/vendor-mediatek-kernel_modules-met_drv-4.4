@@ -321,7 +321,9 @@ static int ptpod_print_header(char *buf, int len)
 			str_len += snprintf(buf + str_len, PAGE_SIZE - str_len, "CPUVolt_%d,", i);
 
 		if (gpu_volt_enable)
-			str_len += snprintf(buf + str_len, PAGE_SIZE - str_len, "GPUVolt\n");
+			str_len += snprintf(buf + str_len, PAGE_SIZE - str_len, "GPUVolt,");
+
+		buf[str_len-1] = '\n';
 
 		str_len += snprintf(buf + str_len, PAGE_SIZE - str_len,
 							"met-info [000] 0.0: met_ptpod_version: ap\n");
