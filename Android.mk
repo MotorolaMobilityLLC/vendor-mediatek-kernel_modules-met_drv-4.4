@@ -22,13 +22,6 @@ ifeq ($(CONFIG_MODULES_EXIST), y)
 include $(CLEAR_VARS)
 LOCAL_MODULE := met.ko
 
-ifeq (user,$(TARGET_BUILD_VARIANT))
-   MET_INTERNAL_USE := $(shell test -f $(MY_KERNEL_ROOT_DIR)/vendor/mediatek/kernel_modules/met_drv_secure/4.4/init.met.rc && echo yes)
-   ifeq ($(MET_INTERNAL_USE),yes)
-      LOCAL_INIT_RC := ../../met_drv_secure/4.4/init.met.rc
-   endif
-endif
-
 include $(MTK_KERNEL_MODULE)
 else
 $(warning Not building met.ko due to CONFIG_MODULES is not set)
