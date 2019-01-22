@@ -41,7 +41,7 @@ static struct kobject *kobj_cpu;
 static struct met_pmu *pmu;
 static int nr_arg;
 
-#define CNTMAX 8
+#define CNTMAX NR_CPUS
 static DEFINE_PER_CPU(unsigned long long[CNTMAX], perfCurr);
 static DEFINE_PER_CPU(unsigned long long[CNTMAX], perfPrev);
 static DEFINE_PER_CPU(int[CNTMAX], perfCntFirst);
