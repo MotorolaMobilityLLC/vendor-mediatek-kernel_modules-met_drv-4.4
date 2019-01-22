@@ -11,6 +11,7 @@
  * GNU General Public License for more details.
  */
 #include <linux/delay.h>
+#include <linux/module.h> /* symbol_get */
 
 #include "ondiemet_sspm.h"
 #define MET_USER_EVENT_SUPPORT
@@ -18,12 +19,16 @@
 #include "interface.h"
 
 #ifdef CONFIG_MTK_TINYSYS_SSPM_SUPPORT
+#if defined(CONFIG_MTK_GMO_RAM_OPTIMIZE) || defined(CONFIG_MTK_MET_MEM_ALLOC)
 #ifdef CONFIG_MET_ARM_32BIT
-#include <linux/module.h> /* symbol_get */
 #include <asm/dma-mapping.h> /* arm_coherent_dma_ops */
-#else
+#else /* CONFIG_MET_ARM_32BIT */
 #include <linux/dma-mapping.h>
-#endif
+#endif /* CONFIG_MET_ARM_32BIT */
+#else /* CONFIG_MTK_GMO_RAM_OPTIMIZE */
+#include "sspm_reservedmem.h"
+#include "sspm_reservedmem_define.h"
+#endif /* CONFIG_MTK_GMO_RAM_OPTIMIZE */
 
 dma_addr_t ondiemet_sspm_log_phy_addr;
 void *ondiemet_sspm_log_virt_addr;
@@ -216,6 +221,7 @@ int sspm_attr_init(struct device *dev)
 {
 	int ret;
 
+#if defined(CONFIG_MTK_GMO_RAM_OPTIMIZE) || defined(CONFIG_MTK_MET_MEM_ALLOC)
 #ifdef CONFIG_MET_ARM_32BIT
 	struct dma_map_ops *ops = (struct dma_map_ops *)symbol_get(arm_coherent_dma_ops);
 
@@ -227,13 +233,29 @@ int sspm_attr_init(struct device *dev)
 						GFP_KERNEL,
 						0);
 	}
-#else
+#else /* CONFIG_MET_ARM_32BIT */
 	/* dma_alloc */
 	ondiemet_sspm_log_virt_addr = dma_alloc_coherent(dev,
 			ondiemet_sspm_log_size,
 			&ondiemet_sspm_log_phy_addr,
 			GFP_KERNEL);
-#endif
+#endif /* CONFIG_MET_ARM_32BIT */
+#else /* CONFIG_MTK_GMO_RAM_OPTIMIZE */
+
+	phys_addr_t (*sspm_reserve_mem_get_phys_sym)(unsigned int id) = NULL;
+	phys_addr_t (*sspm_reserve_mem_get_virt_sym)(unsigned int id) = NULL;
+	phys_addr_t (*sspm_reserve_mem_get_size_sym)(unsigned int id) = NULL;
+
+	sspm_reserve_mem_get_phys_sym = (phys_addr_t (*)(unsigned int id))symbol_get(sspm_reserve_mem_get_virt);
+	sspm_reserve_mem_get_virt_sym = (phys_addr_t (*)(unsigned int id))symbol_get(sspm_reserve_mem_get_phys);
+	sspm_reserve_mem_get_size_sym = (phys_addr_t (*)(unsigned int id))symbol_get(sspm_reserve_mem_get_size);
+	if (sspm_reserve_mem_get_phys_sym)
+		ondiemet_sspm_log_virt_addr = (void*)sspm_reserve_mem_get_virt(MET_MEM_ID);
+	if (sspm_reserve_mem_get_virt_sym)
+		ondiemet_sspm_log_phy_addr = sspm_reserve_mem_get_phys(MET_MEM_ID);
+	if (sspm_reserve_mem_get_size_sym)
+		ondiemet_sspm_log_size = sspm_reserve_mem_get_size(MET_MEM_ID);
+#endif /* CONFIG_MTK_GMO_RAM_OPTIMIZE */
 
 	ret = device_create_file(dev, &dev_attr_sspm_buffer_size);
 	if (ret != 0) {
@@ -294,6 +316,7 @@ int sspm_attr_uninit(struct device *dev)
 {
 	/* dma_free */
 	if (ondiemet_sspm_log_virt_addr != NULL) {
+#if defined(CONFIG_MTK_GMO_RAM_OPTIMIZE) || defined(CONFIG_MTK_MET_MEM_ALLOC)
 #ifdef CONFIG_MET_ARM_32BIT
 		struct dma_map_ops *ops = (struct dma_map_ops *)symbol_get(arm_coherent_dma_ops);
 
@@ -304,12 +327,13 @@ int sspm_attr_uninit(struct device *dev)
 				ondiemet_sspm_log_phy_addr,
 				0);
 		}
-#else
+#else /* CONFIG_MET_ARM_32BIT */
 		dma_free_coherent(dev,
 			ondiemet_sspm_log_size,
 			ondiemet_sspm_log_virt_addr,
 			ondiemet_sspm_log_phy_addr);
-#endif
+#endif /* CONFIG_MET_ARM_32BIT */
+#endif /* CONFIG_MTK_GMO_RAM_OPTIMIZE */
 		ondiemet_sspm_log_virt_addr = NULL;
 		stop_sspm_ipi_recv_thread();
 	}
@@ -356,8 +380,13 @@ void sspm_start(void)
 		return;
 
 	platform_name = met_get_platform_name();
-	if (platform_name)
-		ret = kstrtouint(&platform_name[2], 10, &platform_id);
+	if (platform_name) {
+		char buf[5];
+
+		memset(buf, 0x0, 5);
+		memcpy(buf, &platform_name[2], 4);
+		ret = kstrtouint(buf, 10, &platform_id);
+	}
 
 	/* send DRAM physical address */
 	ipi_buf[0] = MET_MAIN_ID | MET_BUFFER_INFO;
