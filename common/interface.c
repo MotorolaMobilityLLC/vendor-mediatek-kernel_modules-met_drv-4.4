@@ -182,7 +182,7 @@ static DEVICE_ATTR(suspend_compensation_flag, 0444, suspend_compensation_flag_sh
 
 static ssize_t ipi_test_store(struct device *dev, struct device_attribute *attr, const char *buf,
 			 size_t count);
-static DEVICE_ATTR(ipi_test, 0664, NULL, ipi_test_store);
+static DEVICE_ATTR(ipi_test, 0220, NULL, ipi_test_store);
 
 static const struct file_operations met_file_ops = {
 	.owner = THIS_MODULE
