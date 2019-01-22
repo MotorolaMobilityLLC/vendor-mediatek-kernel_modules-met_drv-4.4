@@ -260,6 +260,16 @@ int core_plf_init(void)
 	met_register(&met_ptpod);
 #endif
 
+#ifdef MET_WALLTIME
+	met_register(&met_wall_time);
+#endif
+
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(ONDIEMET_SUPPORT)
+#ifdef MET_SSPM_WALLTIME
+	met_register(&met_sspm_walltime);
+#endif
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT && ONDIEMET_SUPPORT */
+
 	return 0;
 }
 
@@ -287,4 +297,14 @@ void core_plf_exit(void)
 #ifdef MET_PTPOD
 	met_deregister(&met_ptpod);
 #endif
+
+#ifdef MET_WALLTIME
+	met_deregister(&met_wall_time);
+#endif
+
+#if defined(CONFIG_MTK_TINYSYS_SSPM_SUPPORT) && defined(ONDIEMET_SUPPORT)
+#ifdef MET_SSPM_WALLTIME
+	met_deregister(&met_sspm_walltime);
+#endif
+#endif /* CONFIG_MTK_TINYSYS_SSPM_SUPPORT && ONDIEMET_SUPPORT */
 }
